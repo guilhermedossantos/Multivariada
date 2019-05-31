@@ -1,0 +1,299 @@
+---
+title: "Análise multivariada - Atividade"
+subtitle: 'Análise de Discriminante'
+author: 'Guilherme dos Santos & Isabelle Oliveira'
+date: '31/05/2019'
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r include = FALSE}
+library(dplyr)
+library(MASS)
+library(caret)
+library(purrr)
+library(knitr)
+library(kableExtra)
+```
+
+Elabore um pequeno relatório com uma análise discriminante considerando o conjunto de dados 'vinhos.txt', 
+
+O conjunto de dados possui informações de 178 amostras de vinhos italianos de uma mesma região mas derivados de três diferentes cultivares. São 59 observações do vinho tipo 1, 71 do vinho tipo 2 e 48 do vinho tipo 3.
+
+As variáveis observadas para cada vinho são:\
+1. Álcool, que é criado como um resultado direto do processo de fermentação e é também um indicador do conteúdo de açúcar das uvas.\
+2. Ácido málico, que é o ácido primário em uvas, que podem influenciar o gosto dos vinhos.\
+3. Teor de cinzas, que é um indicador de qualidade.\
+4. Alcalinidade da cinza, uma propriedade química das cinzas.\
+5. Magnésio, um mineral.\
+6. Fenóis totais, uma classe de moléculas importantes para definir o sabor, cheiro, benefícios medicinais e diversidade do vinho. Os tipos de fenóis são classificados como flavonóides e não flavonóides.\
+7. Flavonóides, um tipo de fenol no vinho tinto que possui um maior impacto no sabor do vinho.\
+8. Fenóis não flavonóides, outro tipo de fenól.\
+9. Proantocianidinas, tipo de flavonóide das semestes das uvas.\
+10. Intensidade da cor.\
+11. Tonalidade do vinho.\
+12. OD280/OD315 de vinhos diluídos.\
+13. Teor de prolina, que é alterada pela variedade de uvas.
+
+Todas as variáveis são numéricas e contínuas.
+
+```{r}
+vinhos = read.table("vinhos.txt", header = T, sep = ',')
+
+# Faça uma análise discriminante para realizar a classificação de vinhos do tipo X (o valor de X será informado em sala de aula). Assuma custos de classificação incorreta iguais e que as proporções de vinhos derivados de cada cultivar sejam iguais.
+
+X = 1
+vinhos = data.frame(vinhos, Categoria = ifelse(vinhos$Tipo == X, 1, 0))
+vinhos$Categoria = as.factor(vinhos$Categoria)
+vinhos$Tipo <- NULL
+
+# Faça uma análise descritiva dos dados comparando os resultados em cada categoria. A partir desses resultados, reflita sobre a possibilidade de remover alguma(s) das variáveis na função discriminante e também sobre qual a função discriminante a ser considerada.
+
+# Separe uma porcentagem da amostra de cada uma das duas categorias para fazer parte da amostra de aprendizagem e o restante para ser a amostra de validação.
+
+# Faça a análise considerando as funções discriminantes linear e quadrática obtidas na amostra de aprendizagem.
+
+# Construa as matrizes de confusão e estime a taxa de erro total e as taxas de erros em cada categoria. Para isso, proceda de duas formas:
+# 1 - Avalie as funções de classificação na amostra de validação. Faça uma análise descritiva dos valores observados para as funções de classificação em cada categoria e compare os resultados.
+
+# 2 - Utilize o método pseudo-jackknife na amostra de treinamento.
+
+# Inclua as variáveis removidas, caso tenha, e faça uma nova análise.
+
+# Conclua informando qual a função discriminante obteve melhor desempenho e também as variáveis consideradas na análise.
+```
+
+
+### Médias dentro de cada população
+```{r}
+medias <- vinhos %>% group_by(Categoria) %>% summarise_all(~c(mean(.)))
+
+kable(medias, align = "c") %>% 
+  kable_styling(bootstrap_options =  c("striped", 
+                                       "hover", 
+                                       "condensed", 
+                                       "responsive"), 
+                full_width = F, font_size = 12) %>%
+  scroll_box(width = "915px")
+```
+
+### Matrizes de covariância por categoria
+```{r include=T, results='asis'}
+lista_vinhos <- split(vinhos, vinhos$Categoria)
+lapply(lista_vinhos, function(x)round(cov(x[,-14]),4)) -> lista_covs
+map(lista_covs, ~ kable(as.data.frame(.)) %>%
+  kable_styling(
+    bootstrap_options = c(
+      "striped",
+      "hover",
+      "condensed",
+      "responsive"
+    ),
+    full_width = F, font_size = 12
+  ) %>%
+  scroll_box(width = "915px")) 
+```
+
+  Observando as matrizes de covariância, vemos que estas diferem consideravelmente, portanto o mais indicado é realizar a análise considerando a função discriminante quadrática. No entanto realizaremos as duas análises (linear e quadrática) para fins de comparação.
+
+
+```{r}
+#cat1 <- vinhos %>% filter(Categoria == 1) %>% select(-Categoria)
+
+variancias <- map(lista_covs, diag)
+variancias %>% reduce(rbind) %>% as.data.frame() -> variancias
+rownames(variancias) <- c("0","1")
+kable(variancias, align = "c") %>% 
+  kable_styling(bootstrap_options =  c("striped", 
+                                       "hover", 
+                                       "condensed", 
+                                       "responsive"), 
+                full_width = F, font_size = 12) 
+```
+
+  E observando as médias para cada população, comparando as mesmas com a variância (e desvio-padrão), temos indícios de que talvez as variáveis "Alcalinidade" e "Magnésio" não tragam grande contribuição para a classificação. Iremos realizar a análise sem essas variáveis e posteriormente iremos realizar uma análise com elas incluídas, para fins de comparação e estudo.
+
+
+#### Separando a base em teste e treino
+```{r}
+ind_treino <-  createDataPartition(vinhos$Categoria, p = .8, 
+                                  list = FALSE, 
+                                  times = 1)
+
+treino <- vinhos[ind_treino,]
+teste <- vinhos[-ind_treino,]
+```
+
+### Analíse de Discriminante Linear
+```{r}
+#total amostral e cálculo da matriz de covariancia combinada (Sc)
+n1 <- filter(treino, treino$Categoria == 1) %>% nrow()
+n2 <- nrow(treino) - n1
+
+names(lista_covs) <- c("S_0", "S_1")
+
+list2env(lista_covs, envir = .GlobalEnv)
+
+Sc <- ((n1-1)*S_1 + (n2-1)*S_0)/(n1+n2-2)
+kable(Sc, digits = 3, caption = 'Matriz de covariância combinada', align = "c") %>% 
+  kable_styling(bootstrap_options =  c("striped", 
+                                       "hover", 
+                                       "condensed", 
+                                       "responsive"), 
+                full_width = F, font_size = 12) %>%
+  scroll_box(width = "915px")
+
+```
+
+```{r}
+medias_treino <- treino %>% group_by(Categoria) %>% summarise_all(~c(mean(.)))
+
+kable(medias_treino, digits = 3, 
+      caption = 'Médias segundo Categoria na base de treino', align = "c") %>%
+  kable_styling(bootstrap_options =  c("striped", 
+                                       "hover", 
+                                       "condensed", 
+                                       "responsive"), 
+                full_width = F, font_size = 12) %>%
+  scroll_box(width = "915px")
+```
+
+```{r}
+medias_treino_0 <- medias_treino[1, 2:ncol(medias_treino)]
+medias_treino_1 <- medias_treino[2, 2:ncol(medias_treino)]
+
+dif_medias <- as.numeric(medias_treino_1 - medias_treino_0)
+
+#lado esquerdo da equação de classificação
+Sc_inv <- solve(Sc)
+alinha <- dif_medias %*% Sc_inv 
+alinha
+
+#como dito no enunciado, as probabilidadaes a priori são iguais
+p1 <- 0.5 -> p2
+
+#lado direito da equação de classificação, considerando custos e probabilidades a priori iguais
+
+
+
+soma_medias <- t(medias_treino_0 + medias_treino_1)
+k <- (1/2) * alinha %*% soma_medias 
+k <- as.numeric(k)
+k
+```
+  
+  
+  Portanto, $R_1: -1.63X_1 -0.59X_2 -0.03X_3 +0.79X_4 + 0.13X_5 -7.71X_6 + 7.79X_7 -2.02X_8 + 1.41X_9 +0.31X_{10} + 1.53X_{11} - 3.16X_{12} - 0.76X_{13} >= k $
+
+####Matriz de confusão
+
+```{r}
+teste$comb <- teste[,-14] %>% as.matrix() %>% apply(1, function(x)sum(alinha*x)) 
+
+teste %>% mutate(classificacao = ifelse(comb >= k, 1, 0)) -> teste
+table(teste$Categoria, teste$classificacao) -> matriz_conf
+
+confusionMatrix(matriz_conf)
+```
+
+```{r}
+n1c <- sum(teste$Categoria == 0 & teste$classificacao == 0)
+n1m <- sum(teste$Categoria == 0) - n1c
+
+n2c <- sum(teste$Categoria == 1 & teste$classificacao == 1)
+n2m <- sum(teste$Categoria == 1) - n2c
+
+mconfusao_linear <- rbind.data.frame(c(n1c,n1m), c(n2m,n2c))
+names(mconfusao_linear) <- c('pi 1', 'pi 2')
+rownames(mconfusao_linear) <- c('pi 1', 'pi 2')
+
+mconfusao_linear %>% kable(align = "c") %>% kable_styling(full_width = F)
+```
+
+
+### Jack-knife
+```{r}
+# Vou criar uma função que faz a reamostragem e estima os "parâmetros" para depois iterar com um sapply, ou map, for, etc
+
+# quero que seja função do índice que eu vou tirar
+estima <- function(i){
+  obs <- as.numeric(treino[i,-14])
+  categoriaobs <- treino$Categoria[i]
+  
+  treino <- treino[-i,]
+  medias_treino <- treino %>% group_by(Categoria) %>% summarise_all(~c(mean(.)))
+  
+  lista_vinhos <- split(vinhos, vinhos$Categoria)
+  lapply(lista_vinhos, function(x)round(cov(x[,-14]),4)) -> lista_covs
+  
+  n1 <- filter(treino, treino$Categoria == 1) %>% nrow()
+  n2 <- nrow(treino) - n1
+  
+  names(lista_covs) <- c("S_0", "S_1")
+  
+  S_1 <- lista_covs[["S_1"]]
+  S_0 <- lista_covs[["S_0"]]
+  
+  Sc <- ((n1-1)*S_1 + (n2-1)*S_0)/(n1+n2-2)
+  
+  
+  medias_treino_0 <- medias_treino[1, 2:ncol(medias_treino)]
+  medias_treino_1 <- medias_treino[2, 2:ncol(medias_treino)]
+  
+  dif_medias <- as.numeric(medias_treino_1 - medias_treino_0)
+  
+  #lado esquerdo da equação de classificação
+  Sc_inv <- solve(Sc)
+  alinha <- dif_medias %*% Sc_inv 
+  
+  #como dito no enunciado, as probabilidadaes a priori são iguais
+  p1 <- 0.5 -> p2
+  
+  soma_medias <- t(medias_treino_0 + medias_treino_1)
+  k <- (1/2) * alinha %*% soma_medias 
+  k <- as.numeric(k)
+  
+  Classificacao <- ifelse(alinha %*% obs >= k, 1, 0)
+  Classificacao
+}
+
+
+
+```
+
+
+
+###Análise de discriminante quadrática
+```{r}
+lista_vinhos_treino <- split(treino, treino$Categoria)
+lapply(lista_vinhos_treino, function(x)cov(x[,-14])) -> covs_treino
+
+
+xbarra1 <- as.numeric(medias_treino[2, 2:ncol(medias_treino)])
+xbarra2 <- as.numeric(medias_treino[1, 2:ncol(medias_treino)])
+
+S1 <- covs_treino$`1`
+S2 <- covs_treino$`0`
+
+# matriz das diferenças das matrizes inversas das variâncias
+A <- solve(S1) - solve(S2)
+
+B <- xbarra1 %*% solve(S1) -  xbarra2 %*% solve(S2) 
+
+
+# Para depois fazer x'Ax + Bx >= k (custos iguais e probabilidades a priori também)
+
+k <- as.numeric((1/2) * log(det(S1)/det(S2)) + (1/2) * (t(xbarra1) %*% solve(S1) %*% xbarra1 - t(xbarra2) %*% solve(S2) %*% xbarra2))
+
+```
+ Daí, classificamos o vinho como sendo da categoria 1 se -$\frac{1}{2}x'Ax + Bx \geq k$, onde A e B são as matrizes definidas no chunk acima e k é `r k`
+
+```{r}
+teste <- vinhos[-ind_treino,]
+teste %>% mutate(Classificacao = )
+```
+
+
+
