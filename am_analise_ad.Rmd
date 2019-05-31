@@ -185,7 +185,7 @@ k
 ```
   
   
-  Portanto, $R_1: -1.63X_1 -0.59X_2 -0.03X_3 +0.79X_4 + 0.13X_5 -7.71X_6 + 7.79X_7 -2.02X_8 + 1.41X_9 +0.31X_{10} + 1.53X_{11} - 3.16X_{12} - 0.76X_{13} >= k $
+  Portanto, $R_1: -1.63X_1 -0.59X_2 -0.03X_3 +0.79X_4 + 0.13X_5 -7.71X_6 + 7.79X_7 -2.02X_8 + 1.41X_9 +0.31X_{10} + 1.53X_{11} - 3.16X_{12} - 0.76X_{13} >= k $ (tem q mudar e setar  umasemente dps p dar a msm coisa p gnt fazer o latex)
 
 ####Matriz de confusão
 
@@ -212,6 +212,8 @@ rownames(mconfusao_linear) <- c('pi 1', 'pi 2')
 mconfusao_linear %>% kable(align = "c") %>% kable_styling(full_width = F)
 ```
 
+Observando a matriz de confusao vemos que a analise de discriminante linear apresenta uma otima performance na base, classificando corretamente todos os
+Individuos na base de teste.
 
 ### Jack-knife
 ```{r}
@@ -295,5 +297,5 @@ teste <- vinhos[-ind_treino,]
 teste %>% mutate(Classificacao = )
 ```
 
-
+Falta terminar de fazer a classificacao, fazer o jackknige,  escrvwer,  etirar  avariavel tbm sla aaaaaa vo explodir
 
