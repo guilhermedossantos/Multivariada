@@ -1,0 +1,133 @@
+---
+title: "Análise multivariada"
+output: html_notebook
+---
+
+```{r warning = F, message=FALSE}
+library(dplyr)
+library(kableExtra)
+library(knitr)
+library(factoextra)
+```
+
+
+# Atividade - Análise de agrupamentos
+
+Elabore um pequeno relatório com uma análise de agrupamentos considerando o conjunto de dados 'vinhos2.txt', 
+
+O conjunto de dados possui informações de 178 amostras de vinhos italianos de uma mesma região mas derivados de diferentes cultivares.
+
+As variáveis observadas para cada vinho são:\
+1. Álcool, que é criado como um resultado direto do processo de fermentação e é também um indicador do conteúdo de açúcar das uvas.\
+2. Ácido málico, que é o ácido primário em uvas, que podem influenciar o gosto dos vinhos.\
+3. Teor de cinzas, que é um indicador de qualidade.\
+4. Alcalinidade da cinza, uma propriedade química das cinzas.\
+5. Magnésio, um mineral.\
+6. Fenóis totais, uma classe de moléculas importantes para definir o sabor, cheiro, benefícios medicinais e diversidade do vinho. Os tipos de fenóis são classificados como flavonóides e não flavonóides.\
+7. Flavonóides, um tipo de fenol no vinho tinto que possui um maior impacto no sabor do vinho.\
+8. Fenóis não flavonóides, outro tipo de fenól.\
+9. Proantocianidinas, tipo de flavonóide das semestes das uvas.\
+10. Intensidade da cor.\
+11. Tonalidade do vinho.\
+12. OD280/OD315 de vinhos diluídos.\
+13. Teor de prolina, que é alterada pela variedade de uvas.
+
+Todas as variáveis são numéricas e contínuas.
+
+Faça uma análise de agrupamentos para criar grupos de vinhos com características semelhantes.
+
+Padronize o conjunto de dados e considere a distância euclidiana ao quadrado como medida de distância entre as observações.
+
+Para cada método hierárquico, considere:\
+- Análise da distância em relação ao número de grupos (ou passos do algoritmo);\
+- Análise do coeficiente $R^2$ em relação ao número de grupos (ou passos do algoritmo);\
+- Análise do coeficiente de silhueta médio em relação ao número de grupos.
+
+A partir dos resultados acima, determine, para cada método, o número de grupos a ser considerado para o conjunto de dados.
+
+O número de grupos $k$ a ser considerado será aquele que gera melhores resultados para os métodos hierárquicos.
+
+Levando em conta o número de grupos $k$, faça a análise de agrupamentos considerando os métodos não hierárquicos. Comos os métodos não hierárquicos são sensíveis em relação à escolha das sementes iniciais, rode cada algoritmo 100 vezes e registre as informações obtidas para os grupos formados com maior frequência.
+
+Informe qual o método considerado que obteve o melhor agrupamento (dentre os hierárquicos e não hierárquicos) e faça uma análise descritiva para os elementos dos grupos formados por tal método.
+
+```{r}
+vinhos2 = read.table("vinhos2.txt", header = T, sep = ',')
+
+# Padronizando os dados
+dados <- scale(vinhos2)
+
+# dados %>% 
+#   head()
+#   kable %>% 
+#   kable_styling() %>% 
+#     scroll_box(width = )
+```
+
+## Métodos hierárquicos
+ Dentre os métodos hierárquicos aglomerativos, serão considerados 4 métodos:
+  
+  - Método de Ligação Simples
+  - Método de Ligação Completo
+  - Método de Ligação Média
+  - Método do centróide
+  - Método de ward
+
+#### Matriz de distâncias
+  A distância considerada é o quadrado da distância euclidiana para as variáveis padronizadas.
+  
+```{r}
+D <- analogue::distance(dados, 
+                        method = "SQeuclidean", 
+                        dist = TRUE)
+
+
+```
+
+### Método de ligação simples
+```{r}
+simples <- hclust(D, method = "single")
+fviz_dend(simples, as.ggplot = TRUE)
+```
+
+ - Alturas em que ocorreram as ligações
+```{r}
+plot(simples$height, ylab = "Altura")
+```
+
+```{r}
+diferencas <- diff(simples$height)
+order(diferencas, decreasing = T)[1:5] #Maior ocorre no passo 172
+plot(diferencas)
+```
+
+
+
+### Método de ligação Completa
+```{r}
+completa <- hclust(D, method = "complete")
+fviz_dend(completa, cex = 0.5)
+```
+
+
+
+### Método de Ligação Média
+```{r}
+media <- hclust(D, method = "average")
+fviz_dend(media, cex = 0.5)
+```
+
+### Método de Ligação do Centróide
+```{r}
+centroide <- hclust(D, method = "centroid")
+fviz_dend(centroide, cex = 0.5)
+```
+
+
+
+### Método de Ligação de Ward
+```{r}
+ward <- hclust(D, method = "ward.D2")
+fviz_dend(ward, cex = 0.5)
+```
+
