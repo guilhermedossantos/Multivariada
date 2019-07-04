@@ -87,26 +87,48 @@ D <- analogue::distance(dados,
 ### Método de ligação simples
 ```{r}
 simples <- hclust(D, method = "single")
-fviz_dend(simples, as.ggplot = TRUE)
+plot(simples, hang = -1, 
+     main = "Dendrograma utilizando o método simples",
+     ylab = "Distância",
+     xlab = "Observações",sub = "")
 ```
 
- - Alturas em que ocorreram as ligações
+ - Distâncias a cada passo
 ```{r}
 plot(simples$height, ylab = "Altura")
 ```
-
+   A fim de analisar em quais pontos ocorrem os maiores saltos em relação as distâncias em que os grupos são montados, vamos analisar também as diferenças entre as distâncias onde foram realizados os saltos.
+   
 ```{r}
 diferencas <- diff(simples$height)
-order(diferencas, decreasing = T)[1:5] #Maior ocorre no passo 172
 plot(diferencas)
 ```
 
+  Abaixo vemos as 10 maiores diferenças para as distâncias de ligação entre um passo e outro.
+```{r}
+order(diferencas, decreasing = T)[1:10] + 1 
+
+# A diferença entre o passo i e o passo i-1 é a entrada i-1 do vetor de diferenças, como estamos interessados em qual passo ocorreu a distância, foi somado 1
+```
+  
+  As 5 maiores distâncias estão nos passos 172 a 177 não incluso o 176, a sexta distância é 
+  
+```{r}
+
+```
 
 
 ### Método de ligação Completa
 ```{r}
 completa <- hclust(D, method = "complete")
-fviz_dend(completa, cex = 0.5)
+plot(completa, hang = -1, 
+     main = "Dendrograma utilizando o Método de Ligação Completa",
+     ylab = "Distância",
+     xlab = "Observações",sub = "")
+```
+
+```{r}
+
 ```
 
 
@@ -114,13 +136,19 @@ fviz_dend(completa, cex = 0.5)
 ### Método de Ligação Média
 ```{r}
 media <- hclust(D, method = "average")
-fviz_dend(media, cex = 0.5)
+plot(media, hang = -1, 
+     main = "Dendrograma utilizando o Método de Ligação Média",
+     ylab = "Distância",
+     xlab = "Observações",sub = "")
 ```
 
 ### Método de Ligação do Centróide
 ```{r}
 centroide <- hclust(D, method = "centroid")
-fviz_dend(centroide, cex = 0.5)
+plot(centroide, hang = -1, 
+     main = "Dendograma utilizando o Método do Centróide",
+     ylab = "Distância",
+     xlab = "Observações",sub = "")
 ```
 
 
@@ -128,6 +156,18 @@ fviz_dend(centroide, cex = 0.5)
 ### Método de Ligação de Ward
 ```{r}
 ward <- hclust(D, method = "ward.D2")
-fviz_dend(ward, cex = 0.5)
+plot(ward, hang = -1, 
+     main = "Dendograma utilizando o Método de Ward",
+     ylab = "Distância",
+     xlab = "Observações",sub = "")
+```
+
+## Técnicas hierárquicas
+
+```{r}
+k = 3 #botei um qualquer aqui só p poder escrever logo o código, a ideia é escrever dizendo pq escolhemos o k e tals
+
+#(vou escrever agr)
+
 ```
 
