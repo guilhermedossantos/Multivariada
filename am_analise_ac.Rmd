@@ -65,7 +65,7 @@ dados <- scale(vinhos2)
 ```
 
 ## Métodos hierárquicos
- Dentre os métodos hierárquicos aglomerativos, serão considerados 4 métodos:
+ Dentre os métodos hierárquicos aglomerativos, serão considerados 5 métodos:
   
   - Método de Ligação Simples
   - Método de Ligação Completo
@@ -74,6 +74,7 @@ dados <- scale(vinhos2)
   - Método de ward
 
 #### Matriz de distâncias
+
   A distância considerada é o quadrado da distância euclidiana para as variáveis padronizadas.
   
 ```{r}
@@ -97,6 +98,7 @@ plot(simples, hang = -1,
 ```{r}
 plot(simples$height, ylab = "Altura")
 ```
+   
    A fim de analisar em quais pontos ocorrem os maiores saltos em relação as distâncias em que os grupos são montados, vamos analisar também as diferenças entre as distâncias onde foram realizados os saltos.
    
 ```{r}
@@ -105,19 +107,14 @@ plot(diferencas)
 ```
 
   Abaixo vemos as 10 maiores diferenças para as distâncias de ligação entre um passo e outro.
+  
 ```{r}
 order(diferencas, decreasing = T)[1:10] + 1 
 
 # A diferença entre o passo i e o passo i-1 é a entrada i-1 do vetor de diferenças, como estamos interessados em qual passo ocorreu a distância, foi somado 1
 ```
+  Vemos que as cinco maiores se encontram entre o 172 e 177, excluíndo o 176.
   
-  As 5 maiores distâncias estão nos passos 172 a 177 não incluso o 176, a sexta distância é 
-  
-```{r}
-
-```
-
-
 ### Método de ligação Completa
 ```{r}
 completa <- hclust(D, method = "complete")
@@ -127,11 +124,22 @@ plot(completa, hang = -1,
      xlab = "Observações",sub = "")
 ```
 
+ - Distâncias a cada passo
 ```{r}
-
+plot(completa$height, ylab = "Altura")
+```
+   
+   Vemos que as maiores distâncias parecem ocorrer nos números de grupos menores. Afim de investigar melhor, vamos analisar em quais ponto essas ocorrem.
+   
+```{r}
+diferencas <- diff(completa$height)
+plot(diferencas)
 ```
 
-
+```{r}
+order(diferencas, decreasing = T)[1:10] + 1 
+```
+  Novamente, vemos que as 5 maiores distâncias se concentram entre os valores 172 e 177, a diferença é que agora excluí-se o valor 173.
 
 ### Método de Ligação Média
 ```{r}
@@ -142,6 +150,23 @@ plot(media, hang = -1,
      xlab = "Observações",sub = "")
 ```
 
+- Distâncias a cada passo
+```{r}
+plot(media$height, ylab = "Altura")
+```
+   
+   Vemos que novamente as maiores distâncias parecem ocorrer nos números de grupos menores. Afim de investigar melhor, vamos analisar em quais ponto essas ocorrem.
+
+```{r}
+diferencas <- diff(media$height)
+plot(diferencas)
+```
+
+```{r}
+order(diferencas, decreasing = T)[1:10] + 1 
+```
+  O valore 177 é novamente o primeiro, sendo que desta vez o 172 desapareceu do top 10.
+  
 ### Método de Ligação do Centróide
 ```{r}
 centroide <- hclust(D, method = "centroid")
@@ -151,7 +176,21 @@ plot(centroide, hang = -1,
      xlab = "Observações",sub = "")
 ```
 
+- Distâncias a cada passo
+```{r}
+plot(centroide$height, ylab = "Altura")
+```
 
+```{r}
+diferencas <- diff(centroide$height)
+plot(diferencas)
+```
+  Dessa vez, as diferenças parecem muito mais dispersas.
+  
+```{r}
+order(diferencas, decreasing = T)[1:10] + 1 
+```
+  Mas vemos que novamente o valor 177 está em primeiro.
 
 ### Método de Ligação de Ward
 ```{r}
@@ -162,12 +201,25 @@ plot(ward, hang = -1,
      xlab = "Observações",sub = "")
 ```
 
+- Distâncias a cada passo
+```{r}
+plot(ward$height, ylab = "Altura")
+```
+
+```{r}
+diferencas <- diff(ward$height)
+plot(diferencas)
+```
+
+```{r}
+order(diferencas, decreasing = T)[1:10] + 1 
+```
+
 ## Técnicas hierárquicas
 
 ```{r}
 k = 3 #botei um qualquer aqui só p poder escrever logo o código, a ideia é escrever dizendo pq escolhemos o k e tals
 
-#(vou escrever agr)
 
 ```
 
